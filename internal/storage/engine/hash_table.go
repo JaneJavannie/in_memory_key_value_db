@@ -62,14 +62,20 @@ func (s *kvStorage) del(key string) {
 }
 
 func (c *InMemoryStorage) Set(key string, value string) {
-	hash := int(xxhash.Sum64String(key)) % len(c.data)
+	hash := getHash(key, len(c.data))
 	bucket := c.data[hash]
 
 	bucket.set(key, value)
 }
 
+func getHash(key string, bucketCount int) int {
+	h := xxhash.Sum64String(key) % uint64(bucketCount)
+
+	return int(h)
+}
+
 func (c *InMemoryStorage) Get(key string) (string, bool) {
-	hash := int(xxhash.Sum64String(key)) % len(c.data)
+	hash := getHash(key, len(c.data))
 	bucket := c.data[hash]
 
 	value, ok := bucket.get(key)
@@ -81,7 +87,7 @@ func (c *InMemoryStorage) Get(key string) (string, bool) {
 }
 
 func (c *InMemoryStorage) Del(key string) {
-	hash := int(xxhash.Sum64String(key)) % len(c.data)
+	hash := getHash(key, len(c.data))
 	bucket := c.data[hash]
 
 	bucket.del(key)

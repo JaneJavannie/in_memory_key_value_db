@@ -1,7 +1,9 @@
 package compute
 
 import (
-	"log/slog"
+	"fmt"
+
+	"in_memory_key_value_db/internal/consts"
 )
 
 // Parser компонент внутри слоя, отвечающий за парсинг запроса
@@ -26,8 +28,12 @@ func (p *Parser) parse(text string) ([]string, error) {
 			m.processEvent(eventSpace)
 
 		default:
-			slog.Error("unknown symbol '%c'", sym)
+			return nil, fmt.Errorf("%w: unknown symbol: %q", consts.ErrParseSymbol, sym)
 		}
+	}
+
+	if m.currentWord.Len() > 0 {
+		m.commandArgs = append(m.commandArgs, m.currentWord.String())
 	}
 
 	return m.commandArgs, nil

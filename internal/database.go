@@ -2,8 +2,11 @@ package internal
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 
 	"in_memory_key_value_db/internal/compute"
+	"in_memory_key_value_db/internal/consts"
 	"in_memory_key_value_db/internal/storage/engine"
 )
 
@@ -32,18 +35,19 @@ func NewDatabase() *Database {
 }
 
 func (d *Database) HandleRequest(ctx context.Context, text string) (string, error) {
-	//c := compute.NewComputer()
 	query, err := d.computeLayer.Compute(ctx, text)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("compute: %w", err)
 	}
 
-	//e := engine.NewInMemoryEngine()
+	slog.Info("computed successfully", consts.RequestID, ctx.Value(consts.RequestID).(string), "query", query)
 
 	result, err := d.engine.ProcessCommand(ctx, query)
 	if err != nil {
 		return "", err
 	}
+
+	slog.Info("engine: process command success", consts.RequestID, ctx.Value(consts.RequestID).(string), "result", result)
 
 	return result, nil
 }

@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"in_memory_key_value_db/internal/compute"
 	"in_memory_key_value_db/internal/consts"
@@ -21,6 +22,8 @@ func NewInMemoryEngine() Engine {
 func (e *Engine) ProcessCommand(ctx context.Context, query compute.Query) (string, error) {
 	queryResult := ""
 	var err error
+
+	slog.Debug("processing command", consts.RequestID, ctx.Value(consts.RequestID).(string), "command", query.Command)
 
 	switch query.Command {
 

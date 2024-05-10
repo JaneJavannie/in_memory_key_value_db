@@ -43,15 +43,15 @@ func (a *Analyzer) validate(ctx context.Context, parsed []string) error {
 	switch command {
 	case consts.CommandSet:
 		if len(parsed) != 3 {
-			return fmt.Errorf("invalid set query args")
+			return consts.ErrInvalidSetQueryArgs
 		}
 	case consts.CommandGet:
 		if len(parsed) != 2 {
-			return fmt.Errorf("invalid get query args")
+			return consts.ErrInvalidGetQueryArgs
 		}
 	case consts.CommandDel:
 		if len(parsed) != 2 {
-			return fmt.Errorf("invalid del query args")
+			return consts.ErrInvalidDelQueryArgs
 		}
 	default:
 		return fmt.Errorf("unknown command: %s", command)
