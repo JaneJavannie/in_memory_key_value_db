@@ -5,6 +5,7 @@ go 1.22.3
 require (
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/google/uuid v1.6.0
+	github.com/lmittmann/tint v1.0.4
 	github.com/stretchr/testify v1.9.0
 )
 

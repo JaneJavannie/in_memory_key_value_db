@@ -1,0 +1,6 @@
+app:
+  timeout: 3s #seconds
+
+logger:
+  level: debug
+  is_pretty: true

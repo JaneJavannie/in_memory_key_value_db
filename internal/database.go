@@ -23,14 +23,16 @@ type databaseLayer interface {
 }
 
 type Database struct {
+	logger       *slog.Logger
 	computeLayer compute.Computer
 	engine       engine.Engine
 }
 
-func NewDatabase() *Database {
+func NewDatabase(logger *slog.Logger) *Database {
 	return &Database{
-		computeLayer: compute.NewComputer(),
-		engine:       engine.NewInMemoryEngine(),
+		logger:       logger,
+		computeLayer: compute.NewComputer(logger),
+		engine:       engine.NewInMemoryEngine(logger),
 	}
 }
 
@@ -40,14 +42,14 @@ func (d *Database) HandleRequest(ctx context.Context, text string) (string, erro
 		return "", fmt.Errorf("compute: %w", err)
 	}
 
-	slog.Info("computed successfully", consts.RequestID, ctx.Value(consts.RequestID).(string), "query", query)
+	d.logger.Info("computed successfully", consts.RequestID, ctx.Value(consts.RequestID).(string), "query", query)
 
 	result, err := d.engine.ProcessCommand(ctx, query)
 	if err != nil {
 		return "", err
 	}
 
-	slog.Info("engine: process command success", consts.RequestID, ctx.Value(consts.RequestID).(string), "result", result)
+	d.logger.Info("engine: process command success", consts.RequestID, ctx.Value(consts.RequestID).(string), "result", result)
 
 	return result, nil
 }

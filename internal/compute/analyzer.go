@@ -3,6 +3,7 @@ package compute
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"in_memory_key_value_db/internal/consts"
@@ -14,9 +15,15 @@ type Query struct {
 }
 
 // Analyzer компонент внутри слоя, отвечающий за анализ запроса
-type Analyzer struct{}
+type Analyzer struct {
+	logger *slog.Logger
+}
 
-func newAnalyzer() Analyzer { return Analyzer{} }
+func newAnalyzer(logger *slog.Logger) Analyzer {
+	return Analyzer{
+		logger: logger,
+	}
+}
 
 // AnalyzeQuery из массива строк делает команду и аргументы
 func (a *Analyzer) analyzeQuery(ctx context.Context, parsed []string) (Query, error) {

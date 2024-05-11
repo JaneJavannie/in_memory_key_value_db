@@ -10,11 +10,13 @@ import (
 )
 
 type Engine struct {
+	logger  *slog.Logger
 	storage *InMemoryStorage
 }
 
-func NewInMemoryEngine() Engine {
+func NewInMemoryEngine(logger *slog.Logger) Engine {
 	return Engine{
+		logger:  logger,
 		storage: InitMemoryStorage(),
 	}
 }

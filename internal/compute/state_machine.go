@@ -1,6 +1,9 @@
 package compute
 
-import "strings"
+import (
+	"log/slog"
+	"strings"
+)
 
 type state string
 
@@ -46,14 +49,16 @@ func initTransitionTable() {
 }
 
 type stateMachine struct {
+	logger      *slog.Logger
 	state       state
 	commandArgs []string
 	currentWord strings.Builder
 }
 
-func newStateMachine() *stateMachine {
+func newStateMachine(logger *slog.Logger) *stateMachine {
 	initTransitionTable()
 	return &stateMachine{
+		logger:      logger,
 		state:       stateInitial,
 		commandArgs: make([]string, 0),
 		currentWord: strings.Builder{},

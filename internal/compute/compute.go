@@ -19,32 +19,38 @@ type analyzer interface {
 	validate(ctx context.Context, parsed []string) error
 }
 
-type Computer struct{}
+type Computer struct {
+	logger *slog.Logger
+}
 
-func NewComputer() Computer { return Computer{} }
+func NewComputer(logger *slog.Logger) Computer {
+	return Computer{
+		logger: logger,
+	}
+}
 
 func (c *Computer) Compute(ctx context.Context, text string) (Query, error) {
-	p := newParser()
+	p := newParser(c.logger)
 
-	slog.Debug("parsing text", consts.RequestID, ctx.Value(consts.RequestID).(string), "text", text)
+	c.logger.Debug("parsing text", consts.RequestID, ctx.Value(consts.RequestID).(string), "text", text)
 
 	result, err := p.parse(text)
 	if err != nil {
 		return Query{}, fmt.Errorf("parse: %w", err)
 	}
 
-	slog.Debug("parse success", consts.RequestID, ctx.Value(consts.RequestID).(string))
+	c.logger.Debug("parse success", consts.RequestID, ctx.Value(consts.RequestID).(string))
 
-	a := newAnalyzer()
+	a := newAnalyzer(c.logger)
 
-	slog.Debug("analyzing parse result", consts.RequestID, ctx.Value(consts.RequestID).(string), "result", result)
+	c.logger.Debug("analyzing parse result", consts.RequestID, ctx.Value(consts.RequestID).(string), "result", result)
 
 	query, err := a.analyzeQuery(ctx, result)
 	if err != nil {
 		return Query{}, fmt.Errorf("analyze: %w", err)
 	}
 
-	slog.Debug("analyze success", consts.RequestID, ctx.Value(consts.RequestID).(string))
+	c.logger.Debug("analyze success", consts.RequestID, ctx.Value(consts.RequestID).(string))
 
 	return query, nil
 }

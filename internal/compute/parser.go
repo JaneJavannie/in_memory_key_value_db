@@ -2,17 +2,24 @@ package compute
 
 import (
 	"fmt"
+	"log/slog"
 
 	"in_memory_key_value_db/internal/consts"
 )
 
 // Parser компонент внутри слоя, отвечающий за парсинг запроса
-type Parser struct{}
+type Parser struct {
+	logger *slog.Logger
+}
 
-func newParser() Parser { return Parser{} }
+func newParser(logger *slog.Logger) Parser {
+	return Parser{
+		logger: logger,
+	}
+}
 
 func (p *Parser) parse(text string) ([]string, error) {
-	m := newStateMachine()
+	m := newStateMachine(p.logger)
 
 	for _, sym := range text {
 		switch {

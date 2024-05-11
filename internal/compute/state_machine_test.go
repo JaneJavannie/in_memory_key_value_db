@@ -1,6 +1,7 @@
 package compute
 
 import (
+	"log/slog"
 	"testing"
 )
 
@@ -33,7 +34,7 @@ func TestProcessEvent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			m := newStateMachine()
+			m := newStateMachine(slog.Default())
 
 			for _, event := range test.events {
 				m.processEvent(event)
