@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"in_memory_key_value_db/internal/compute"
-	"in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

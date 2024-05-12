@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 )
 
 // compute - слой, отвечающий за обработку запроса
@@ -20,32 +20,35 @@ type analyzer interface {
 }
 
 type Computer struct {
-	logger *slog.Logger
+	parser   *Parser
+	analyzer *Analyzer
+	logger   *slog.Logger
 }
 
 func NewComputer(logger *slog.Logger) Computer {
+	p := newParser(logger)
+	a := newAnalyzer(logger)
+
 	return Computer{
-		logger: logger,
+		parser:   &p,
+		analyzer: &a,
+		logger:   logger,
 	}
 }
 
 func (c *Computer) Compute(ctx context.Context, text string) (Query, error) {
-	p := newParser(c.logger)
-
 	c.logger.Debug("parsing text", consts.RequestID, ctx.Value(consts.RequestID).(string), "text", text)
 
-	result, err := p.parse(text)
+	result, err := c.parser.parse(text)
 	if err != nil {
 		return Query{}, fmt.Errorf("parse: %w", err)
 	}
 
 	c.logger.Debug("parse success", consts.RequestID, ctx.Value(consts.RequestID).(string))
 
-	a := newAnalyzer(c.logger)
-
 	c.logger.Debug("analyzing parse result", consts.RequestID, ctx.Value(consts.RequestID).(string), "result", result)
 
-	query, err := a.analyzeQuery(ctx, result)
+	query, err := c.analyzer.analyzeQuery(ctx, result)
 	if err != nil {
 		return Query{}, fmt.Errorf("analyze: %w", err)
 	}

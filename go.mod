@@ -1,4 +1,4 @@
-module in_memory_key_value_db
+module github.com/JaneJavannie/in_memory_key_value_db
 
 go 1.22.3
 

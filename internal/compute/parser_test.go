@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 
 	"github.com/stretchr/testify/assert"
 )

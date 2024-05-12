@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 )
 
 // Parser компонент внутри слоя, отвечающий за парсинг запроса

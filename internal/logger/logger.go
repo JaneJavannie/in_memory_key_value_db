@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"in_memory_key_value_db/internal/configs"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
 
 	"github.com/lmittmann/tint"
 )

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"in_memory_key_value_db/internal/compute"
-	"in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 )
 
 type Engine struct {

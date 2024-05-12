@@ -10,10 +10,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"in_memory_key_value_db/internal"
-	"in_memory_key_value_db/internal/configs"
-	"in_memory_key_value_db/internal/consts"
-	mylogger "in_memory_key_value_db/internal/logger"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+	mylogger "github.com/JaneJavannie/in_memory_key_value_db/internal/logger"
 
 	"github.com/google/uuid"
 )
@@ -56,7 +56,7 @@ func listenUserInput(ctx context.Context, logger *slog.Logger, db *internal.Data
 
 		go func() {
 			reader := bufio.NewReader(os.Stdin)
-			fmt.Print("Enter text: ")
+			fmt.Print("ENTER TEXT: ")
 
 			text, err := reader.ReadString('\n')
 			input := userInput{
@@ -84,7 +84,7 @@ func listenUserInput(ctx context.Context, logger *slog.Logger, db *internal.Data
 				logger.Error("db: handle request", consts.RequestID, requestCtx.Value(consts.RequestID).(string), "error", err)
 			}
 
-			fmt.Printf("%+v", result)
+			fmt.Printf("RESPONSE: %+v\n", result)
 		}
 	}
 }
