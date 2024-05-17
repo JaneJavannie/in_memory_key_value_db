@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
@@ -21,53 +20,35 @@ func NewInMemoryEngine(logger *slog.Logger) Engine {
 	}
 }
 
-func (e *Engine) ProcessCommand(ctx context.Context, query compute.Query) (string, error) {
+func (e *Engine) ProcessCommand(ctx context.Context, query compute.Query) string {
 	queryResult := ""
-	var err error
 
 	slog.Debug("processing command", consts.RequestID, ctx.Value(consts.RequestID).(string), "command", query.Command)
 
 	switch query.Command {
-
 	case consts.CommandSet:
-		err = e.processSet(ctx, query)
-		if err != nil {
-			return "", fmt.Errorf("error processing set: %w", err)
-		}
+		e.processSet(ctx, query)
 
 	case consts.CommandGet:
-		queryResult, err = e.processGet(ctx, query)
-		if err != nil {
-			return "", fmt.Errorf("error processing get: %w", err)
-		}
+		queryResult = e.processGet(ctx, query)
 
 	case consts.CommandDel:
-		err = e.processDel(ctx, query)
-		if err != nil {
-			return "", fmt.Errorf("error processing del: %w", err)
-		}
+		e.processDel(ctx, query)
 	}
 
-	return queryResult, nil
+	return queryResult
 }
 
-func (e *Engine) processSet(ctx context.Context, query compute.Query) error {
+func (e *Engine) processSet(ctx context.Context, query compute.Query) {
 	e.storage.Set(query.Arguments[0], query.Arguments[1])
-
-	return nil
 }
 
-func (e *Engine) processGet(ctx context.Context, query compute.Query) (string, error) {
-	val, ok := e.storage.Get(query.Arguments[0])
-	if !ok {
-		return "", fmt.Errorf("error getting key: key not found")
-	}
+func (e *Engine) processGet(ctx context.Context, query compute.Query) string {
+	val, _ := e.storage.Get(query.Arguments[0])
 
-	return val, nil
+	return val
 }
 
-func (e *Engine) processDel(ctx context.Context, query compute.Query) error {
+func (e *Engine) processDel(ctx context.Context, query compute.Query) {
 	e.storage.Del(query.Arguments[0])
-
-	return nil
 }

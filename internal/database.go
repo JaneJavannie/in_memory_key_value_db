@@ -44,10 +44,7 @@ func (d *Database) HandleRequest(ctx context.Context, text string) (string, erro
 
 	d.logger.Info("computed successfully", consts.RequestID, ctx.Value(consts.RequestID).(string), "query", query)
 
-	result, err := d.engine.ProcessCommand(ctx, query)
-	if err != nil {
-		return "", err
-	}
+	result := d.engine.ProcessCommand(ctx, query)
 
 	d.logger.Info("engine: process command success", consts.RequestID, ctx.Value(consts.RequestID).(string), "result", result)
 

@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
@@ -18,10 +17,9 @@ func TestEngine_ProcessCommand(t *testing.T) {
 		query compute.Query
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr assert.ErrorAssertionFunc
+		name string
+		args args
+		want string
 	}{
 		{
 			name: "set success",
@@ -33,9 +31,6 @@ func TestEngine_ProcessCommand(t *testing.T) {
 				},
 			},
 			want: "",
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				return assert.NoError(t, err, "expected no error")
-			},
 		},
 
 		{
@@ -48,9 +43,6 @@ func TestEngine_ProcessCommand(t *testing.T) {
 				},
 			},
 			want: "world",
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				return assert.NoError(t, err, "expected no error")
-			},
 		},
 
 		{
@@ -63,9 +55,6 @@ func TestEngine_ProcessCommand(t *testing.T) {
 				},
 			},
 			want: "",
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				return assert.Error(t, err, "expected error")
-			},
 		},
 
 		{
@@ -78,9 +67,6 @@ func TestEngine_ProcessCommand(t *testing.T) {
 				},
 			},
 			want: "",
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				return assert.NoError(t, err, "expected no error")
-			},
 		},
 	}
 
@@ -89,10 +75,8 @@ func TestEngine_ProcessCommand(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got, err := e.ProcessCommand(tt.args.ctx, tt.args.query)
-		if !tt.wantErr(t, err, fmt.Sprintf("ProcessCommand(%v, %v)", tt.args.ctx, tt.args.query)) {
-			return
-		}
+		got := e.ProcessCommand(tt.args.ctx, tt.args.query)
+
 		assert.Equalf(t, tt.want, got, "ProcessCommand(%v, %v)", tt.args.ctx, tt.args.query)
 	}
 }
