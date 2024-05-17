@@ -54,18 +54,15 @@ func listenUserInput(ctx context.Context, logger *slog.Logger, db *internal.Data
 	for {
 		in := make(chan userInput, 1)
 
-		go func() {
-			reader := bufio.NewReader(os.Stdin)
-			fmt.Print("ENTER TEXT: ")
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("ENTER TEXT: ")
 
-			text, err := reader.ReadString('\n')
-			input := userInput{
-				text: text,
-				err:  err,
-			}
+		text, err := reader.ReadString('\n')
 
-			in <- input
-		}()
+		in <- userInput{
+			text: text,
+			err:  err,
+		}
 
 		select {
 		case <-ctx.Done():
