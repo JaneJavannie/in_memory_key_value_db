@@ -14,7 +14,7 @@ type Query struct {
 	Arguments []string
 }
 
-// Analyzer компонент внутри слоя, отвечающий за анализ запроса
+// Analyzer component inside the layer responsible for query analysis
 type Analyzer struct {
 	logger *slog.Logger
 }
@@ -25,7 +25,7 @@ func newAnalyzer(logger *slog.Logger) Analyzer {
 	}
 }
 
-// AnalyzeQuery из массива строк делает команду и аргументы
+// AnalyzeQuery makes a command and arguments from an array of strings
 func (a *Analyzer) analyzeQuery(ctx context.Context, parsed []string) (Query, error) {
 	err := a.validate(ctx, parsed)
 	if err != nil {

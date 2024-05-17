@@ -8,7 +8,7 @@ import (
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 )
 
-// compute - слой, отвечающий за обработку запроса
+// compute - layer responsible for processing the request
 
 type parser interface {
 	parse(string) ([]string, error)

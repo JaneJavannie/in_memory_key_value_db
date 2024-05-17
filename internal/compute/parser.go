@@ -7,7 +7,7 @@ import (
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 )
 
-// Parser компонент внутри слоя, отвечающий за парсинг запроса
+// Parser component inside the layer responsible for parsing the request
 type Parser struct {
 	logger *slog.Logger
 }
