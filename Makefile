@@ -1,8 +1,12 @@
-MAIN_FILE = cmd/main.go
+SERVER_FILE = cmd/main.go
+CLIENT_FILE = client/main.go
 OUTPUT_DIR = .
 
-build:
-	go build -o $(OUTPUT_DIR)/in_memory_db $(MAIN_FILE)
+build_server:
+	go build -o $(OUTPUT_DIR)/in_memory_db $(SERVER_FILE)
+
+build_client:
+	go build -o $(OUTPUT_DIR)/in_memory_db_client $(CLIENT_FILE)
 
 test:
 	go test ./... -v -cover

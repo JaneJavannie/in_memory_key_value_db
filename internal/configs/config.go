@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 	"gopkg.in/yaml.v3"
 )
 
@@ -13,11 +14,24 @@ type Logger struct {
 	IsPretty bool   `yaml:"is_pretty"`
 }
 
+type Network struct {
+	Address        string `yaml:"address"`
+	MaxConnections int    `yaml:"max_connections"`
+}
+
+type Engine struct {
+	Type string `yaml:"type"`
+}
+
+type App struct {
+	Timeout time.Duration `yaml:"timeout"`
+}
+
 type Config struct {
-	App struct {
-		Timeout time.Duration `yaml:"timeout"`
-	} `yaml:"app"`
-	Logger Logger `yaml:"logger"`
+	App     App     `yaml:"app"`
+	Engine  Engine  `yaml:"engine"`
+	Network Network `yaml:"network"`
+	Logger  Logger  `yaml:"logger"`
 }
 
 func NewConfig(configPath string) (*Config, error) {
@@ -30,7 +44,27 @@ func NewConfig(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("new config: %w", err)
 	}
 
+	cfg.SetDefaults()
+
 	return cfg, nil
+}
+
+func (c *Config) SetDefaults() {
+	if c.App.Timeout == 0 {
+		c.App.Timeout = consts.AppTimeout * time.Second
+	}
+	if c.Engine.Type == "" {
+		c.Engine.Type = consts.EngineType
+	}
+	if c.Network.Address == "" {
+		c.Network.Address = consts.ServerAddress
+	}
+	if c.Network.MaxConnections == 0 {
+		c.Network.MaxConnections = consts.MaxConnections
+	}
+	if c.Logger.Level == "" {
+		c.Logger.Level = consts.LogLevel
+	}
 }
 
 func parseConfig(configPath string) (*Config, error) {

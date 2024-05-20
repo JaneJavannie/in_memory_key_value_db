@@ -1,0 +1,10 @@
+app:
+  timeout: 15s
+engine:
+  type: custom
+network:
+  address: 127.0.0.1:8080
+  max_connections: 10
+logger:
+  level: error
+  is_pretty: true
