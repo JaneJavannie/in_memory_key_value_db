@@ -1,5 +1,5 @@
 SERVER_FILE = cmd/main.go
-CLIENT_FILE = client/main.go
+CLIENT_FILE = client/main.go client/handler.go
 OUTPUT_DIR = .
 
 build_server:
