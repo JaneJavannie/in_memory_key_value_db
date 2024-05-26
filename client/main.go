@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
-	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"os/signal"
 	"syscall"
@@ -38,7 +39,12 @@ func main() {
 	}
 	defer conn.Close()
 
-	handleInput(ctx, conn)
+	err = handleInput(ctx, conn)
+	if err != nil {
+		if !errors.Is(err, context.Canceled) {
+			slog.Error("handleInput: " + err.Error())
+		}
+	}
 
-	fmt.Println("bye")
+	slog.Info("bye")
 }

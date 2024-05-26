@@ -39,8 +39,16 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	logger.Info("server started")
+
+	<-ctx.Done()
+
+	logger.Info("database is shutting down...")
 
 	// shutdown components
-	logger.Warn("database is shutting down")
+	err = server.Stop()
+	if err != nil {
+		logger.Warn("server stop: %v", err)
+	}
+
+	logger.Warn("bb")
 }
