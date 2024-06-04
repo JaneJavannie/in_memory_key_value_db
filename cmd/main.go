@@ -1,26 +1,22 @@
 package main
 
 import (
-	"bufio"
 	"context"
-	"fmt"
 	"log"
-	"log/slog"
-	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
-	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 	mylogger "github.com/JaneJavannie/in_memory_key_value_db/internal/logger"
-
-	"github.com/google/uuid"
 )
 
 const configPath = "./config.yaml"
 
 func main() {
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	cfg, err := configs.NewConfig(configPath)
 	if err != nil {
 		log.Fatal(err)
@@ -30,58 +26,29 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	logger.Info("config loaded")
 
 	db := internal.NewDatabase(logger)
+	logger.Info("db configured")
 
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
+	server := internal.NewTcpServer(cfg.Network.MaxConnections, cfg.Network.Address, db, logger)
+	logger.Info("server configured")
 
-	err = listenUserInput(ctx, logger, db)
+	err = server.Start(ctx)
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
+
+	<-ctx.Done()
+
+	logger.Info("database is shutting down...")
 
 	// shutdown components
-	logger.Warn("database is shutting down")
-}
-
-func listenUserInput(ctx context.Context, logger *slog.Logger, db *internal.Database) error {
-	type userInput struct {
-		text string
-		err  error
+	err = server.Stop()
+	if err != nil {
+		logger.Warn("server stop: %v", err)
 	}
 
-	for {
-		in := make(chan userInput, 1)
-
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("ENTER TEXT: ")
-
-		text, err := reader.ReadString('\n')
-
-		in <- userInput{
-			text: text,
-			err:  err,
-		}
-
-		select {
-		case <-ctx.Done():
-			return nil
-		case input := <-in:
-			if input.err != nil {
-				return input.err
-			}
-
-			requestCtx := context.WithValue(ctx, consts.RequestID, uuid.New().String())
-
-			logger.Info("main: incoming request", consts.RequestID, requestCtx.Value(consts.RequestID).(string))
-
-			result, err := db.HandleRequest(requestCtx, input.text)
-			if err != nil {
-				logger.Error("db: handle request", consts.RequestID, requestCtx.Value(consts.RequestID).(string), "error", err)
-			}
-
-			fmt.Printf("RESPONSE: %+v\n", result)
-		}
-	}
+	logger.Warn("bb")
 }

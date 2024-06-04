@@ -1,6 +1,13 @@
 app:
   timeout: 3s #seconds
 
+engine:
+  type: "in_memory"
+
+network:
+  address: "127.0.0.1:8088"
+  max_connections: 1
+
 logger:
   level: debug
   is_pretty: true

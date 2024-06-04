@@ -2,7 +2,7 @@
 Simple in memory key-value database implementation on golang.
 
 ### How to build:
-1. Just run make build
+1. Just run make build_client, make build_server
 2. App will be built to the project root directory, using config.yaml in the root directory
 
 ### How to run tests:
