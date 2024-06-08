@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInMemoryStorage_Del(t *testing.T) {
@@ -35,7 +36,8 @@ func TestInMemoryStorage_Del(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := InitMemoryStorage()
+			c, err := NewInMemoryStorage(false, "")
+			require.NoError(t, err)
 
 			c.Set(tt.args.key, tt.args.value)
 
@@ -78,7 +80,8 @@ func TestInMemoryStorage_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := InitMemoryStorage()
+			c, err := NewInMemoryStorage(false, "")
+			require.NoError(t, err)
 
 			c.Set(tt.args.key, tt.args.value)
 
@@ -121,7 +124,8 @@ func TestInMemoryStorage_Set(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := InitMemoryStorage()
+			c, err := NewInMemoryStorage(false, "")
+			require.NoError(t, err)
 
 			c.Set(tt.args.key, tt.args.value)
 

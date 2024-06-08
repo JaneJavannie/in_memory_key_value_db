@@ -116,3 +116,30 @@ func TestNewConfig_InvalidFile(t *testing.T) {
 		t.Fatal("NewConfig(invalid_file): expected an error, got nil")
 	}
 }
+
+func TestParseToBytes(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int
+		err      bool
+	}{
+		{"10KB", 10240, false},
+		{"5MB", 5242880, false},
+		{"3GB", 3221225472, false},
+		{"1TB", 1099511627776, false},
+		{"invalid", 0, true},
+	}
+
+	for _, test := range tests {
+		size, err := parseToBytes(test.input)
+		if test.err && err == nil {
+			t.Errorf("Expected error but got nil")
+		}
+		if !test.err && err != nil {
+			t.Errorf("Expected no error but got: %v", err)
+		}
+		if size != test.expected {
+			t.Errorf("For input %s, expected %d, but got %d", test.input, test.expected, size)
+		}
+	}
+}

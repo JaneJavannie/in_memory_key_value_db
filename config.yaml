@@ -6,7 +6,14 @@ engine:
 
 network:
   address: "127.0.0.1:8088"
-  max_connections: 1
+  max_connections: 10
+
+wal:
+  is_write_to_wal: true
+  flushing_batch_size: 2
+  flushing_batch_timeout: "10s"
+  max_segment_size: "2KB"
+  data_directory: "./wal_logs/wal"
 
 logger:
   level: debug

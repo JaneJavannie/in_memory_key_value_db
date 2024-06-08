@@ -6,6 +6,7 @@ import (
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+	"github.com/stretchr/testify/require"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -70,12 +71,16 @@ func TestEngine_ProcessCommand(t *testing.T) {
 		},
 	}
 
+	storage, err := NewInMemoryStorage(false, "")
+	require.NoError(t, err)
+
 	e := &Engine{
-		storage: InitMemoryStorage(),
+		storage: storage,
 	}
 
 	for _, tt := range tests {
-		got := e.ProcessCommand(tt.args.ctx, tt.args.query)
+		got, err := e.ProcessCommand(tt.args.ctx, tt.args.query)
+		require.NoError(t, err)
 
 		assert.Equalf(t, tt.want, got, "ProcessCommand(%v, %v)", tt.args.ctx, tt.args.query)
 	}
