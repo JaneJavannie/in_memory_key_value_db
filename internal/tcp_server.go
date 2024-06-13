@@ -20,7 +20,7 @@ type TcpServer struct {
 	db       *Database
 	log      *slog.Logger
 
-	done sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 func NewTcpServer(maxConnections int, address string, db *Database, logger *slog.Logger) *TcpServer {
@@ -48,10 +48,10 @@ func (s *TcpServer) Start() error {
 	s.listener = listener
 	s.log.Info("server started", "address", s.address)
 
-	s.done.Add(1)
+	s.wg.Add(1)
 
 	go func() {
-		defer s.done.Done()
+		defer s.wg.Done()
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -77,7 +77,7 @@ func (s *TcpServer) Start() error {
 
 func (s *TcpServer) Stop() error {
 	err := s.listener.Close()
-	s.done.Wait()
+	s.wg.Wait()
 
 	return err
 }

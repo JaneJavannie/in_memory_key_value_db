@@ -19,11 +19,11 @@ type Engine struct {
 	wal        *wal.Wal
 }
 
-func NewInMemoryEngine(storage *InMemoryStorage, wal *wal.Wal, logger *slog.Logger, cfgWal configs.Wal) (*Engine, error) {
+func NewInMemoryEngine(storage *InMemoryStorage, wal *wal.Wal, logger *slog.Logger, cfgWal *configs.Wal) (*Engine, error) {
 	e := Engine{
 		logger:     logger,
 		storage:    storage,
-		isWriteWal: cfgWal.IsWriteToWal,
+		isWriteWal: cfgWal != nil,
 		wal:        wal,
 	}
 

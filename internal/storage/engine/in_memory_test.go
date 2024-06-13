@@ -71,7 +71,7 @@ func TestEngine_ProcessCommand(t *testing.T) {
 		},
 	}
 
-	storage, err := NewInMemoryStorage(false, "")
+	storage, err := NewInMemoryStorage(nil)
 	require.NoError(t, err)
 
 	e := &Engine{

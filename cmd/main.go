@@ -30,7 +30,7 @@ func main() {
 	}
 	logger.Info("config loaded")
 
-	storage, err := engine.NewInMemoryStorage(cfg.Wal.IsWriteToWal, cfg.Wal.DataDir)
+	storage, err := engine.NewInMemoryStorage(cfg.Wal)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	wal.Start(cfg.Wal.IsWriteToWal)
+	wal.Start(cfg.Wal)
 
 	inMemoryEngine, err := engine.NewInMemoryEngine(storage, wal, logger, cfg.Wal)
 	if err != nil {
@@ -71,7 +71,7 @@ func main() {
 		logger.Warn("server stop: %v", err)
 	}
 
-	wal.Stop(cfg.Wal.IsWriteToWal)
+	wal.Stop(cfg.Wal)
 
 	logger.Warn("bb")
 }

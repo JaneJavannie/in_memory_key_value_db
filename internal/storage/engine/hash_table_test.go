@@ -36,7 +36,7 @@ func TestInMemoryStorage_Del(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewInMemoryStorage(false, "")
+			c, err := NewInMemoryStorage(nil)
 			require.NoError(t, err)
 
 			c.Set(tt.args.key, tt.args.value)
@@ -80,7 +80,7 @@ func TestInMemoryStorage_Get(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewInMemoryStorage(false, "")
+			c, err := NewInMemoryStorage(nil)
 			require.NoError(t, err)
 
 			c.Set(tt.args.key, tt.args.value)
@@ -124,7 +124,7 @@ func TestInMemoryStorage_Set(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := NewInMemoryStorage(false, "")
+			c, err := NewInMemoryStorage(nil)
 			require.NoError(t, err)
 
 			c.Set(tt.args.key, tt.args.value)

@@ -17,13 +17,11 @@ func handleInput(ctx context.Context, conn net.Conn) error {
 			return ctx.Err()
 		}
 
-		fmt.Printf("ENTER TEXT: ")
+		fmt.Printf("%s: ENTER TEXT: ", time.Now().Format(time.TimeOnly))
 		text, err := readStringWithContext(ctx)
 		if err != nil {
 			return fmt.Errorf("read string: %w", err)
 		}
-
-		println(time.Now().Format(time.TimeOnly))
 
 		// Send data to the server
 		data := []byte(text + "\n")

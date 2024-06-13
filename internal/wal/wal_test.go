@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
 )
 
 func TestStart(t *testing.T) {
@@ -31,7 +32,7 @@ func TestStart(t *testing.T) {
 		logger:                slog.Default(),
 	}
 
-	go w.Start(true)
+	go w.Start(&configs.Wal{})
 }
 
 func TestFlushRecords(t *testing.T) {

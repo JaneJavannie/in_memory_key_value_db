@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/wal"
 	"github.com/cespare/xxhash/v2"
@@ -23,7 +24,7 @@ type InMemoryStorage struct {
 	data [bucketCount]*kvStorage
 }
 
-func NewInMemoryStorage(isWriteWal bool, walDir string) (*InMemoryStorage, error) {
+func NewInMemoryStorage(wal *configs.Wal) (*InMemoryStorage, error) {
 	c := &InMemoryStorage{}
 
 	for i := 0; i < bucketCount; i++ {
@@ -33,8 +34,8 @@ func NewInMemoryStorage(isWriteWal bool, walDir string) (*InMemoryStorage, error
 		}
 	}
 
-	if isWriteWal {
-		err := c.loadWal(walDir)
+	if wal != nil {
+		err := c.loadWal(wal.DataDir)
 		if err != nil {
 			return nil, fmt.Errorf("load WAL: %v", err)
 		}

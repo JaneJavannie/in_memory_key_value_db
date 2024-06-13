@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -32,8 +33,7 @@ type Wal struct {
 	xCond    *sync.Mutex
 	cond     *sync.Cond
 
-	close chan struct{}
-	done  sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 type Log struct {
@@ -41,8 +41,8 @@ type Log struct {
 	Query compute.Query
 }
 
-func NewWal(logger *slog.Logger, cfg configs.Wal) (*Wal, error) {
-	if !cfg.IsWriteToWal {
+func NewWal(logger *slog.Logger, cfg *configs.Wal) (*Wal, error) {
+	if cfg == nil {
 		return &Wal{}, nil
 	}
 
@@ -73,70 +73,78 @@ func NewWal(logger *slog.Logger, cfg configs.Wal) (*Wal, error) {
 	return wal, nil
 }
 
-func (w *Wal) Start(isWriteWal bool) {
-	if !isWriteWal {
+func (w *Wal) Start(wal *configs.Wal) {
+	if wal == nil {
 		return
 	}
 
-	w.done.Add(1)
+	w.wg.Add(1)
 
 	go func() {
-		defer w.done.Done()
+		defer w.wg.Done()
 
-		t := time.NewTimer(w.batchTimeout)
-		defer t.Stop()
+		timer := time.NewTimer(w.batchTimeout)
+		defer timer.Stop()
 
 		for {
 			flush := false
 
 			select {
-			case <-t.C:
-				w.logger.Debug("CASE TIMER")
-
-				flush = true
+			case <-timer.C:
+				flush = w.handleTimerEvent()
 
 			case wl := <-w.operations:
-				w.logger.Debug("CASE WAL")
-
-				if len(w.batch) == 0 {
-					w.logger.Debug("t.Reset()")
-
-					t.Reset(w.batchTimeout)
-				}
-
-				w.batch = append(w.batch, wl)
-
-				if len(w.batch) == w.batchSize {
-					flush = true
-				}
+				flush = w.handleWALEvent(timer, wl)
 			}
 
 			if flush {
-				w.logger.Debug("FLUSH")
-
-				err := w.flushRecords()
-				if err != nil {
-					w.logger.Error("flush records: %w", err)
-				}
-
-				t.Stop()
-				w.batch = nil
-
-				w.xCond.Lock()
-				w.flushErr = err
-				w.cond.Broadcast()
-				w.xCond.Unlock()
+				w.handleFlush(timer)
 			}
 		}
 	}()
 }
 
-func (w *Wal) Stop(isWriteWal bool) {
-	if !isWriteWal {
+func (w *Wal) handleTimerEvent() bool {
+	w.logger.Debug("CASE TIMER")
+	return true
+}
+
+func (w *Wal) handleWALEvent(timer *time.Timer, wl Log) bool {
+	w.logger.Debug("CASE WAL")
+
+	if len(w.batch) == 0 {
+		w.logger.Debug("t.Reset()")
+		timer.Reset(w.batchTimeout)
+	}
+
+	w.batch = append(w.batch, wl)
+
+	return len(w.batch) == w.batchSize
+}
+
+func (w *Wal) handleFlush(timer *time.Timer) {
+	w.logger.Debug("FLUSH")
+
+	err := w.flushRecords()
+	if err != nil {
+		w.logger.Error("flush records: %w", err)
+	}
+
+	timer.Stop()
+	w.batch = nil
+
+	w.xCond.Lock()
+	w.flushErr = err
+	w.cond.Broadcast()
+	w.xCond.Unlock()
+}
+
+func (w *Wal) Stop(wal *configs.Wal) {
+	if wal == nil {
 		return
 	}
 
-	w.done.Wait()
+	w.wg.Wait()
 }
 
 func (w *Wal) WriteLog(_ context.Context, log Log) error {
@@ -153,7 +161,6 @@ func (w *Wal) WriteLog(_ context.Context, log Log) error {
 }
 
 func (w *Wal) flushRecords() error {
-	// do not write empty logs
 	if len(w.batch) == 0 {
 		return nil
 	}
@@ -167,13 +174,27 @@ func (w *Wal) flushRecords() error {
 		return dirEntries[i].Name() < dirEntries[j].Name()
 	})
 
+	walRecords := buildWalRecords(w.batch)
+
+	if err = writeWalRecords(w.dataDir, dirEntries, walRecords, w.maxLogFileSegmentSize); err != nil {
+		return fmt.Errorf("write wal records: %w", err)
+	}
+
+	return nil
+}
+
+func buildWalRecords(batch []Log) bytes.Buffer {
 	walRecords := bytes.Buffer{}
 
-	for _, log := range w.batch {
+	for _, log := range batch {
 		record := fmt.Sprintf("%s %s %s \n", log.ID, log.Query.Command, strings.Join(log.Query.Arguments, " "))
 		walRecords.WriteString(record)
 	}
 
+	return walRecords
+}
+
+func writeWalRecords(dataDir string, dirEntries []fs.DirEntry, walRecords bytes.Buffer, maxLogFileSegmentSize int) error {
 	if len(dirEntries) > 0 {
 		latest := dirEntries[len(dirEntries)-1]
 		info, err := latest.Info()
@@ -181,9 +202,9 @@ func (w *Wal) flushRecords() error {
 			return fmt.Errorf("get info: %s: %w", latest.Name(), err)
 		}
 
-		// write to existing file if it has enough free space
-		if int(info.Size())+walRecords.Len() < w.maxLogFileSegmentSize {
-			err := writeRecord(w.dataDir, latest.Name(), walRecords)
+		// write to an existing file
+		if int(info.Size())+walRecords.Len() < maxLogFileSegmentSize {
+			err := writeRecord(dataDir, latest.Name(), walRecords)
 			if err != nil {
 				return fmt.Errorf("write record: %s: %w", latest.Name(), err)
 			}
@@ -192,9 +213,9 @@ func (w *Wal) flushRecords() error {
 		}
 	}
 
-	// otherwise write to a new one
+	// write to a new file
 	fileName := fmt.Sprintf("%s", time.Now().Format("20060102_150405"))
-	err = writeRecord(w.dataDir, fileName, walRecords)
+	err := writeRecord(dataDir, fileName, walRecords)
 	if err != nil {
 		return fmt.Errorf("write record: %s: %w", fileName, err)
 	}
@@ -214,6 +235,11 @@ func writeRecord(dataDir string, filename string, walRecords bytes.Buffer) error
 	_, err = file.Write(walRecords.Bytes())
 	if err != nil {
 		return fmt.Errorf("write file: %s: %w", filename, err)
+	}
+
+	err = file.Sync()
+	if err != nil {
+		return fmt.Errorf("sync file by path [ %s ]:  %w", path, err)
 	}
 
 	return nil

@@ -9,9 +9,8 @@ network:
   max_connections: 10
 
 wal:
-  is_write_to_wal: true
   flushing_batch_size: 2
-  flushing_batch_timeout: "10s"
+  flushing_batch_timeout: "1000s"
   max_segment_size: "2KB"
   data_directory: "./wal_logs/wal"
 

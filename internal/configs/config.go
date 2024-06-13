@@ -18,7 +18,6 @@ type Logger struct {
 }
 
 type Wal struct {
-	IsWriteToWal         bool          `yaml:"is_write_to_wal"`
 	FlushingBatchSize    int           `yaml:"flushing_batch_size"`
 	FlushingBatchTimeout time.Duration `yaml:"flushing_batch_timeout"`
 	MaxSegmentSize       string        `yaml:"max_segment_size"`
@@ -43,7 +42,7 @@ type Config struct {
 	App     App     `yaml:"app"`
 	Engine  Engine  `yaml:"engine"`
 	Network Network `yaml:"network"`
-	Wal     Wal     `yaml:"wal"`
+	Wal     *Wal    `yaml:"wal"`
 	Logger  Logger  `yaml:"logger"`
 }
 
@@ -82,7 +81,7 @@ func (c *Config) SetDefaults() error {
 		c.Logger.Level = consts.LogLevel
 	}
 
-	if c.Wal.IsWriteToWal {
+	if c.Wal != nil {
 		if c.Wal.FlushingBatchSize == 0 {
 			c.Wal.FlushingBatchSize = consts.WalFlushingBatchSize
 		}
