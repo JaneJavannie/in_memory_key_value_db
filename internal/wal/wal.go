@@ -15,6 +15,7 @@ import (
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 )
 
 type Wal struct {
@@ -41,8 +42,8 @@ type Log struct {
 	Query compute.Query
 }
 
-func NewWal(logger *slog.Logger, cfg *configs.Wal) (*Wal, error) {
-	if cfg == nil {
+func NewWal(logger *slog.Logger, cfg *configs.Wal, replicationType string) (*Wal, error) {
+	if cfg == nil || replicationType == consts.ReplicationTypeSlave {
 		return &Wal{}, nil
 	}
 

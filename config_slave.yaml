@@ -5,13 +5,14 @@ engine:
   type: "in_memory"
 
 wal:
-  flushing_batch_size: 2
-  flushing_batch_timeout: "1000s"
-  max_segment_size: "2KB"
-  data_directory: "./wal_logs/wal"
+  is_write_to_wal: false
+#  flushing_batch_size: 2
+#  flushing_batch_timeout: "10s"
+#  max_segment_size: "2KB"
+#  data_directory: "./wal_logs/wal"
 
 network:
-  address: "127.0.0.1:8088"
+  address: "127.0.0.1:8089"
   max_connections: 10
 
 replication:

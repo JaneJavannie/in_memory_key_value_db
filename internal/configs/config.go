@@ -38,12 +38,22 @@ type App struct {
 	Timeout time.Duration `yaml:"timeout"`
 }
 
+type Replication struct {
+	Type          string        `yaml:"replica_type"`
+	MasterAddress string        `yaml:"master_address"`
+	SyncInterval  time.Duration `yaml:"sync_interval"`
+}
+
 type Config struct {
-	App     App     `yaml:"app"`
-	Engine  Engine  `yaml:"engine"`
-	Network Network `yaml:"network"`
-	Wal     *Wal    `yaml:"wal"`
-	Logger  Logger  `yaml:"logger"`
+	App App `yaml:"app"`
+
+	Engine Engine `yaml:"engine"`
+	Wal    *Wal    `yaml:"wal"`
+
+	Network     Network     `yaml:"network"`
+	Replication Replication `yaml:"replication"`
+
+	Logger Logger `yaml:"logger"`
 }
 
 func NewConfig(configPath string) (*Config, error) {
@@ -72,7 +82,7 @@ func (c *Config) SetDefaults() error {
 		c.Engine.Type = consts.EngineType
 	}
 	if c.Network.Address == "" {
-		c.Network.Address = consts.ServerAddress
+		c.Network.Address = consts.MasterServerAddress
 	}
 	if c.Network.MaxConnections == 0 {
 		c.Network.MaxConnections = consts.MaxConnections
@@ -100,6 +110,16 @@ func (c *Config) SetDefaults() error {
 			return fmt.Errorf("parse wal max segment size to bytes: %w", err)
 		}
 		c.Wal.MaxSegmentSizeBytes = bytesSize
+	}
+
+	if c.Replication.SyncInterval == 0 {
+		c.Replication.SyncInterval = consts.ReplicationSyncInterval
+	}
+	if c.Replication.MasterAddress == "" {
+		c.Replication.MasterAddress = consts.MasterServerAddress
+	}
+	if c.Replication.Type == "" {
+		c.Replication.Type = consts.ReplicationTypeSlave
 	}
 
 	return nil

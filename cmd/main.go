@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"os/signal"
 	"syscall"
@@ -13,13 +14,25 @@ import (
 	wals "github.com/JaneJavannie/in_memory_key_value_db/internal/wal"
 )
 
-const configPath = "./config.yaml"
+const (
+	defaultMasterConfigPath = "./config.yaml"
+	defaultSlaveConfigPath  = "./config_slave.yaml"
+)
+
+// --config=./config.yaml
+// --config=./config_slave.yaml
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	cfg, err := configs.NewConfig(configPath)
+	// Define the command-line options
+	configPath := flag.String("config", defaultSlaveConfigPath, "config path")
+
+	// Parse the command-line options
+	flag.Parse()
+
+	cfg, err := configs.NewConfig(*configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,13 +48,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	wal, err := wals.NewWal(logger, cfg.Wal)
+	replicationType := cfg.Replication.Type
+
+	wal, err := wals.NewWal(logger, cfg.Wal, replicationType)
 	if err != nil {
 		log.Fatal(err)
 	}
 	wal.Start(cfg.Wal)
 
-	inMemoryEngine, err := engine.NewInMemoryEngine(storage, wal, logger, cfg.Wal)
+	inMemoryEngine, err := engine.NewInMemoryEngine(storage, wal, logger, cfg.Wal, replicationType)
 	if err != nil {
 		log.Fatal(err)
 	}

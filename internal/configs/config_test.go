@@ -34,7 +34,7 @@ func TestNewConfig(t *testing.T) {
 					Type: consts.EngineType,
 				},
 				Network: Network{
-					Address:        consts.ServerAddress,
+					Address:        consts.MasterServerAddress,
 					MaxConnections: consts.MaxConnections,
 				},
 				Logger: Logger{
