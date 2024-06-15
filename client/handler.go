@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal"
 )
@@ -16,7 +17,7 @@ func handleInput(ctx context.Context, conn net.Conn) error {
 			return ctx.Err()
 		}
 
-		fmt.Print("ENTER TEXT: ")
+		fmt.Printf("%s: ENTER TEXT: ", time.Now().Format(time.TimeOnly))
 		text, err := readStringWithContext(ctx)
 		if err != nil {
 			return fmt.Errorf("read string: %w", err)
@@ -34,7 +35,7 @@ func handleInput(ctx context.Context, conn net.Conn) error {
 			return fmt.Errorf("read bytes: %w", err)
 		}
 
-		fmt.Printf("RESPONSE: %+v\n", string(bytes))
+		fmt.Printf("%s RESPONSE: %+v\n", time.Now().Format(time.TimeOnly), string(bytes))
 	}
 }
 
@@ -46,13 +47,6 @@ func readStringWithContext(ctx context.Context) (string, error) {
 	done := make(chan result, 1)
 
 	go func() {
-		<-ctx.Done()
-		done <- result{
-			err: ctx.Err(),
-		}
-	}()
-
-	go func() {
 		reader := bufio.NewReader(os.Stdin)
 		text, err := reader.ReadString('\n')
 		done <- result{
@@ -61,7 +55,10 @@ func readStringWithContext(ctx context.Context) (string, error) {
 		}
 	}()
 
-	r := <-done
-
-	return r.text, r.err
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case r := <-done:
+		return r.text, r.err
+	}
 }
