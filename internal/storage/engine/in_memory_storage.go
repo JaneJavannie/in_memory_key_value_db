@@ -8,10 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
-	"github.com/JaneJavannie/in_memory_key_value_db/internal/wal"
 	"github.com/cespare/xxhash/v2"
 )
 
@@ -24,7 +22,7 @@ type InMemoryStorage struct {
 	data [bucketCount]*kvStorage
 }
 
-func NewInMemoryStorage(wal *configs.Wal) (*InMemoryStorage, error) {
+func NewInMemoryStorage(cfg *configs.Config) (*InMemoryStorage, error) {
 	c := &InMemoryStorage{}
 
 	for i := 0; i < bucketCount; i++ {
@@ -34,11 +32,25 @@ func NewInMemoryStorage(wal *configs.Wal) (*InMemoryStorage, error) {
 		}
 	}
 
-	if wal != nil {
-		err := c.loadWal(wal.DataDir)
-		if err != nil {
-			return nil, fmt.Errorf("load WAL: %v", err)
-		}
+	replication := cfg.Replication
+
+	if cfg.Wal == nil || replication == nil {
+		return c, nil
+	}
+
+	dataDir := ""
+
+	if cfg.Wal != nil {
+		dataDir = cfg.Wal.DataDir
+	}
+
+	if replication != nil && replication.Type == consts.ReplicationTypeSlave {
+		dataDir = replication.ReplicatedDataDir
+	}
+
+	err := c.loadWal(dataDir)
+	if err != nil {
+		return nil, fmt.Errorf("load WAL: %v", err)
 	}
 
 	return c, nil
@@ -93,23 +105,17 @@ func (c *InMemoryStorage) loadWal(dir string) error {
 			args := make([]string, 0)
 			args = append(args, entries[2:]...)
 
-			logEntry := wal.Log{
-				ID: entries[0],
-				Query: compute.Query{
-					Command:   entries[1],
-					Arguments: args,
-				},
-			}
+			command := entries[1]
 
-			switch logEntry.Query.Command {
+			switch command {
 			case consts.CommandSet:
-				c.Set(logEntry.Query.Arguments[0], logEntry.Query.Arguments[1])
+				c.Set(args[0], args[1])
 
 			case consts.CommandDel:
-				c.Del(logEntry.Query.Arguments[0])
+				c.Del(args[0])
 
 			default:
-				return fmt.Errorf("unknown command: %s", logEntry.Query.Command)
+				return fmt.Errorf("unknown command: %s", command)
 			}
 		}
 

@@ -58,7 +58,7 @@ func TestWriteRecord(t *testing.T) {
 	walRecords := bytes.Buffer{}
 	walRecords.WriteString("Test data")
 
-	err := writeRecord(dataDir, filename, walRecords)
+	err := WriteRecord(dataDir, filename, walRecords)
 	if err != nil {
 		t.Errorf("Error writing record: %v", err)
 	}

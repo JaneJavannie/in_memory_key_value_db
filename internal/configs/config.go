@@ -39,19 +39,20 @@ type App struct {
 }
 
 type Replication struct {
-	Type          string        `yaml:"replica_type"`
-	MasterAddress string        `yaml:"master_address"`
-	SyncInterval  time.Duration `yaml:"sync_interval"`
+	Type              string        `yaml:"replica_type"`
+	MasterAddress     string        `yaml:"master_address"`
+	SyncInterval      time.Duration `yaml:"sync_interval"`
+	ReplicatedDataDir string        `yaml:"replicated_data_directory"`
 }
 
 type Config struct {
 	App App `yaml:"app"`
 
 	Engine Engine `yaml:"engine"`
-	Wal    *Wal    `yaml:"wal"`
+	Wal    *Wal   `yaml:"wal"`
 
-	Network     Network     `yaml:"network"`
-	Replication Replication `yaml:"replication"`
+	Network     Network      `yaml:"network"`
+	Replication *Replication `yaml:"replication"`
 
 	Logger Logger `yaml:"logger"`
 }
@@ -112,14 +113,19 @@ func (c *Config) SetDefaults() error {
 		c.Wal.MaxSegmentSizeBytes = bytesSize
 	}
 
-	if c.Replication.SyncInterval == 0 {
-		c.Replication.SyncInterval = consts.ReplicationSyncInterval
-	}
-	if c.Replication.MasterAddress == "" {
-		c.Replication.MasterAddress = consts.MasterServerAddress
-	}
-	if c.Replication.Type == "" {
-		c.Replication.Type = consts.ReplicationTypeSlave
+	if c.Replication != nil {
+		if c.Replication.SyncInterval == 0 {
+			c.Replication.SyncInterval = consts.ReplicationSyncInterval
+		}
+		if c.Replication.MasterAddress == "" {
+			c.Replication.MasterAddress = consts.MasterServerAddress
+		}
+		if c.Replication.Type == "" {
+			c.Replication.Type = consts.ReplicationTypeSlave
+		}
+		if c.Replication.ReplicatedDataDir == "" {
+			c.Replication.ReplicatedDataDir = consts.ReplicationDataDir
+		}
 	}
 
 	return nil

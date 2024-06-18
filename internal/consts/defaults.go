@@ -8,9 +8,12 @@ const (
 	MasterServerAddress = "127.0.0.1:8088"
 	MaxConnections      = 10
 
-	ReplicationSyncInterval = 5 * time.Second
-	ReplicationTypeSlave    = "slave"
-	SlaveServerAddress      = "127.0.0.1:8089"
+	ReplicationSyncInterval   = 5 * time.Second
+	ReplicationTypeSlave      = "slave"
+	ReplicationTypeMaster     = "master"
+	ReplicationDataDir        = "/tmp/replicated_wals"
+	SlaveServerAddress        = "127.0.0.1:8089"
+	ReplicationMaxConnections = 1
 
 	LogLevel       = "info"
 	MaxMessageSize = 1024

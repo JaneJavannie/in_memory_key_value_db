@@ -15,9 +15,8 @@ network:
   max_connections: 10
 
 replication:
-  replica_type: "slave"
-  master_address: "127.0.0.1:8088"
-  sync_interval: "1s"
+  replica_type: "master"
+  master_address: "127.0.0.1:8090" # we use different ports to differentiate incoming data
 
 logger:
   level: debug
