@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts/defaults"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,6 +18,8 @@ type Logger struct {
 }
 
 type Wal struct {
+	Compaction           bool          `yaml:"compaction"`
+	CompactionInterval   time.Duration `yaml:"compaction_interval"`
 	FlushingBatchSize    int           `yaml:"flushing_batch_size"`
 	FlushingBatchTimeout time.Duration `yaml:"flushing_batch_timeout"`
 	MaxSegmentSize       string        `yaml:"max_segment_size"`
@@ -77,33 +79,42 @@ func NewConfig(configPath string) (*Config, error) {
 
 func (c *Config) SetDefaults() error {
 	if c.App.Timeout == 0 {
-		c.App.Timeout = consts.AppTimeout * time.Second
+		c.App.Timeout = defaults.AppTimeout * time.Second
 	}
 	if c.Engine.Type == "" {
-		c.Engine.Type = consts.EngineType
+		c.Engine.Type = defaults.EngineType
 	}
 	if c.Network.Address == "" {
-		c.Network.Address = consts.MasterServerAddress
+		c.Network.Address = defaults.MasterServerAddress
 	}
 	if c.Network.MaxConnections == 0 {
-		c.Network.MaxConnections = consts.MaxConnections
+		c.Network.MaxConnections = defaults.MaxConnections
 	}
 	if c.Logger.Level == "" {
-		c.Logger.Level = consts.LogLevel
+		c.Logger.Level = defaults.LogLevel
 	}
 
 	if c.Wal != nil {
+		// turn off replication when compaction is on
+		if c.Wal.Compaction {
+			c.Replication = nil
+
+			if c.Wal.CompactionInterval == 0 {
+				c.Wal.CompactionInterval = defaults.WalCompactionTimeout
+			}
+		}
+
 		if c.Wal.FlushingBatchSize == 0 {
-			c.Wal.FlushingBatchSize = consts.WalFlushingBatchSize
+			c.Wal.FlushingBatchSize = defaults.WalFlushingBatchSize
 		}
 		if c.Wal.FlushingBatchTimeout == 0 {
-			c.Wal.FlushingBatchTimeout = consts.WalFlushingBatchTimeout
+			c.Wal.FlushingBatchTimeout = defaults.WalFlushingBatchTimeout
 		}
 		if c.Wal.MaxSegmentSize == "" {
-			c.Wal.MaxSegmentSize = consts.WalMaxSegmentSize
+			c.Wal.MaxSegmentSize = defaults.WalMaxSegmentSize
 		}
 		if c.Wal.DataDir == "" {
-			c.Wal.DataDir = consts.WalDataDir
+			c.Wal.DataDir = defaults.WalDataDir
 		}
 
 		bytesSize, err := parseToBytes(c.Wal.MaxSegmentSize)
@@ -115,16 +126,16 @@ func (c *Config) SetDefaults() error {
 
 	if c.Replication != nil {
 		if c.Replication.SyncInterval == 0 {
-			c.Replication.SyncInterval = consts.ReplicationSyncInterval
+			c.Replication.SyncInterval = defaults.ReplicationSyncInterval
 		}
 		if c.Replication.MasterAddress == "" {
-			c.Replication.MasterAddress = consts.MasterServerAddress
+			c.Replication.MasterAddress = defaults.MasterServerAddress
 		}
 		if c.Replication.Type == "" {
-			c.Replication.Type = consts.ReplicationTypeSlave
+			c.Replication.Type = defaults.ReplicationTypeSlave
 		}
 		if c.Replication.ReplicatedDataDir == "" {
-			c.Replication.ReplicatedDataDir = consts.ReplicationDataDir
+			c.Replication.ReplicatedDataDir = defaults.ReplicationDataDir
 		}
 	}
 

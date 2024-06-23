@@ -16,6 +16,7 @@ import (
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts/defaults"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/protocol/text"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/storage/engine"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/wal"
@@ -54,7 +55,7 @@ func NewReplication(cfg *configs.Config, client *text.Client, server *text.TcpSe
 		logger:          logger,
 	}
 
-	if cfg.Wal != nil && replicationType == consts.ReplicationTypeMaster {
+	if cfg.Wal != nil && replicationType == defaults.ReplicationTypeMaster {
 		replica.walDir = cfg.Wal.DataDir
 	}
 
@@ -63,13 +64,13 @@ func NewReplication(cfg *configs.Config, client *text.Client, server *text.TcpSe
 
 func (r *Replication) Start(ctx context.Context, syncInterval time.Duration) error {
 	switch r.replicationType {
-	case consts.ReplicationTypeSlave:
+	case defaults.ReplicationTypeSlave:
 		err := r.startSlave(ctx, syncInterval)
 		if err != nil {
 			return fmt.Errorf("start slave: %w", err)
 		}
 
-	case consts.ReplicationTypeMaster:
+	case defaults.ReplicationTypeMaster:
 		err := r.startMaster()
 		if err != nil {
 			return fmt.Errorf("start master: %w", err)
@@ -211,7 +212,7 @@ func (r *Replication) GetWalsFromMaster(ctx context.Context) error {
 			id := entries[0]
 			command := entries[1]
 
-			r.logger.Debug("processing log id: %v", id)
+			r.logger.Debug("processing log", "id", id)
 
 			switch command {
 			case consts.CommandSet:

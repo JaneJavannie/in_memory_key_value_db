@@ -10,7 +10,7 @@ import (
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
-	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts/defaults"
 	mylogger "github.com/JaneJavannie/in_memory_key_value_db/internal/logger"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/protocol/text"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/storage/engine"
@@ -61,7 +61,7 @@ func main() {
 	}
 
 	client := text.NewTextClient(masterAddress)
-	replicationServer := text.NewTcpServer(consts.ReplicationMaxConnections, masterAddress, logger)
+	replicationServer := text.NewTcpServer(defaults.ReplicationMaxConnections, masterAddress, logger)
 
 	if replicationCfg != nil {
 		replicationType = replicationCfg.Type
