@@ -17,14 +17,18 @@ type Engine struct {
 
 	isWriteWal bool
 	wal        *wal.Wal
+	isSlave    bool
 }
 
-func NewInMemoryEngine(storage *InMemoryStorage, wal *wal.Wal, logger *slog.Logger, cfgWal *configs.Wal) (*Engine, error) {
+func NewInMemoryEngine(storage *InMemoryStorage, wal *wal.Wal, logger *slog.Logger, cfgWal *configs.Wal, replicationType string) (*Engine, error) {
+	isSlave := replicationType == consts.ReplicationTypeSlave
+
 	e := Engine{
 		logger:     logger,
 		storage:    storage,
-		isWriteWal: cfgWal != nil,
+		isWriteWal: cfgWal != nil && !isSlave,
 		wal:        wal,
+		isSlave:    isSlave,
 	}
 
 	return &e, nil
@@ -38,12 +42,20 @@ func (e *Engine) ProcessCommand(ctx context.Context, query compute.Query) (strin
 
 	switch query.Command {
 	case consts.CommandSet:
+		if e.isSlave {
+			return "", fmt.Errorf("cannot perform modifying operation on slave")
+		}
+
 		err = e.processSet(ctx, query)
 
 	case consts.CommandGet:
 		queryResult = e.processGet(ctx, query)
 
 	case consts.CommandDel:
+		if e.isSlave {
+			return "", fmt.Errorf("cannot perform modifying operation on slave")
+		}
+
 		err = e.processDel(ctx, query)
 	}
 

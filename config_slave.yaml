@@ -1,0 +1,19 @@
+app:
+  timeout: 3s #seconds
+
+engine:
+  type: "in_memory"
+
+network:
+  address: "127.0.0.1:8089"
+  max_connections: 10
+
+replication:
+  replica_type: "slave"
+  master_address: "127.0.0.1:8090"
+  sync_interval: "3s"
+  replicated_data_directory: "./wal_logs/replicated_wal" #dir to store wals that were downloaded from master
+
+logger:
+  level: debug
+  is_pretty: true

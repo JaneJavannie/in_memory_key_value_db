@@ -3,10 +3,18 @@ package consts
 import "time"
 
 const (
-	AppTimeout     = 3
-	EngineType     = "in_memory"
-	ServerAddress  = "localhost:8088"
-	MaxConnections = 10
+	AppTimeout          = 3
+	EngineType          = "in_memory"
+	MasterServerAddress = "127.0.0.1:8088"
+	MaxConnections      = 10
+
+	ReplicationSyncInterval   = 5 * time.Second
+	ReplicationTypeSlave      = "slave"
+	ReplicationTypeMaster     = "master"
+	ReplicationDataDir        = "/tmp/replicated_wals"
+	SlaveServerAddress        = "127.0.0.1:8089"
+	ReplicationMaxConnections = 1
+
 	LogLevel       = "info"
 	MaxMessageSize = 1024
 

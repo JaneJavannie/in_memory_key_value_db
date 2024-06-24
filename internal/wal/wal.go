@@ -15,6 +15,7 @@ import (
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
 )
 
 type Wal struct {
@@ -41,8 +42,8 @@ type Log struct {
 	Query compute.Query
 }
 
-func NewWal(logger *slog.Logger, cfg *configs.Wal) (*Wal, error) {
-	if cfg == nil {
+func NewWal(logger *slog.Logger, cfg *configs.Wal, replicationType string) (*Wal, error) {
+	if cfg == nil || replicationType == consts.ReplicationTypeSlave {
 		return &Wal{}, nil
 	}
 
@@ -174,7 +175,7 @@ func (w *Wal) flushRecords() error {
 		return dirEntries[i].Name() < dirEntries[j].Name()
 	})
 
-	walRecords := buildWalRecords(w.batch)
+	walRecords := BuildWalRecords(w.batch)
 
 	if err = writeWalRecords(w.dataDir, dirEntries, walRecords, w.maxLogFileSegmentSize); err != nil {
 		return fmt.Errorf("write wal records: %w", err)
@@ -183,7 +184,7 @@ func (w *Wal) flushRecords() error {
 	return nil
 }
 
-func buildWalRecords(batch []Log) bytes.Buffer {
+func BuildWalRecords(batch []Log) bytes.Buffer {
 	walRecords := bytes.Buffer{}
 
 	for _, log := range batch {
@@ -204,7 +205,7 @@ func writeWalRecords(dataDir string, dirEntries []fs.DirEntry, walRecords bytes.
 
 		// write to an existing file
 		if int(info.Size())+walRecords.Len() < maxLogFileSegmentSize {
-			err := writeRecord(dataDir, latest.Name(), walRecords)
+			err := WriteRecord(dataDir, latest.Name(), walRecords)
 			if err != nil {
 				return fmt.Errorf("write record: %s: %w", latest.Name(), err)
 			}
@@ -215,7 +216,7 @@ func writeWalRecords(dataDir string, dirEntries []fs.DirEntry, walRecords bytes.
 
 	// write to a new file
 	fileName := fmt.Sprintf("%s", time.Now().Format("20060102_150405"))
-	err := writeRecord(dataDir, fileName, walRecords)
+	err := WriteRecord(dataDir, fileName, walRecords)
 	if err != nil {
 		return fmt.Errorf("write record: %s: %w", fileName, err)
 	}
@@ -223,7 +224,7 @@ func writeWalRecords(dataDir string, dirEntries []fs.DirEntry, walRecords bytes.
 	return nil
 }
 
-func writeRecord(dataDir string, filename string, walRecords bytes.Buffer) error {
+func WriteRecord(dataDir string, filename string, walRecords bytes.Buffer) error {
 	path := filepath.Join(dataDir, filename)
 
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

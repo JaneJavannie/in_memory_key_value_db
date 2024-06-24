@@ -1,7 +1,6 @@
-package internal
+package text
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -10,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+
 	"github.com/google/uuid"
 )
 
@@ -17,13 +17,14 @@ type TcpServer struct {
 	address  string
 	sem      chan struct{}
 	listener net.Listener
-	db       *Database
-	log      *slog.Logger
+
+	log       *slog.Logger
+	onReceive func(ctx context.Context, request string) string
 
 	wg sync.WaitGroup
 }
 
-func NewTcpServer(maxConnections int, address string, db *Database, logger *slog.Logger) *TcpServer {
+func NewTcpServer(maxConnections int, address string, logger *slog.Logger) *TcpServer {
 	// limit the number of connections
 	connectionsCount := make(chan struct{}, maxConnections)
 	for i := 0; i < maxConnections; i++ {
@@ -33,9 +34,12 @@ func NewTcpServer(maxConnections int, address string, db *Database, logger *slog
 	return &TcpServer{
 		address: address,
 		sem:     connectionsCount,
-		db:      db,
 		log:     logger,
 	}
+}
+
+func (s *TcpServer) SetOnReceive(onReceive func(ctx context.Context, request string) string) {
+	s.onReceive = onReceive
 }
 
 func (s *TcpServer) Start() error {
@@ -68,7 +72,12 @@ func (s *TcpServer) Start() error {
 			}
 
 			// Handle client connection in a goroutine
-			go s.handleClient(ctx, conn)
+			go func() {
+				err := s.handleClient(ctx, conn)
+				if err != nil {
+					s.log.Error("failed to handle client connection", "error", err)
+				}
+			}()
 		}
 	}()
 
@@ -76,13 +85,17 @@ func (s *TcpServer) Start() error {
 }
 
 func (s *TcpServer) Stop() error {
+	if s.listener == nil {
+		return nil
+	}
+
 	err := s.listener.Close()
 	s.wg.Wait()
 
 	return err
 }
 
-func (s *TcpServer) handleClient(ctx context.Context, conn net.Conn) {
+func (s *TcpServer) handleClient(ctx context.Context, conn net.Conn) error {
 	defer func() {
 		s.log.Info("handle client", "msg", "connection close")
 
@@ -98,49 +111,18 @@ func (s *TcpServer) handleClient(ctx context.Context, conn net.Conn) {
 		requestCtx := context.WithValue(ctx, consts.RequestID, uuid.New().String())
 		l := s.log.With(consts.RequestID, requestCtx.Value(consts.RequestID))
 
-		bytes, err := ReadBytesWithContext(ctx, conn)
+		request, err := readWithContext(requestCtx, conn)
 		if err != nil {
-			return
+			return fmt.Errorf("failed to read data from client: %w", err)
 		}
 
-		l.Info("handle client: incoming request", "data", string(bytes))
+		l.Info("handle client: incoming request", "data", request)
 
-		// Process and use the data
-		result, err := s.db.HandleRequest(requestCtx, string(bytes))
+		response := s.onReceive(requestCtx, request)
+
+		err = writeWithContext(ctx, conn, response)
 		if err != nil {
-			l.Error("handle client: db: handle request", "error", err)
+			return fmt.Errorf("failed to write response: %w", err)
 		}
-
-		resp := fmt.Sprintf("query result: [ %s ] error: [ %v ] \n", result, err)
-
-		_, err = conn.Write([]byte(resp))
-		if err != nil {
-			l.Error("handle client: write response result", "error", err)
-			return
-		}
-	}
-}
-
-func ReadBytesWithContext(ctx context.Context, conn net.Conn) ([]byte, error) {
-	type result struct {
-		bytes []byte
-		err   error
-	}
-	done := make(chan result, 1)
-
-	go func() {
-		connBuf := bufio.NewReader(conn)
-		bytes, err := connBuf.ReadBytes('\n')
-		done <- result{
-			bytes: bytes,
-			err:   err,
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case r := <-done:
-		return r.bytes, r.err
 	}
 }

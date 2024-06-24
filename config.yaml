@@ -4,15 +4,19 @@ app:
 engine:
   type: "in_memory"
 
-network:
-  address: "127.0.0.1:8088"
-  max_connections: 10
-
 wal:
   flushing_batch_size: 2
   flushing_batch_timeout: "1000s"
   max_segment_size: "2KB"
   data_directory: "./wal_logs/wal"
+
+network:
+  address: "127.0.0.1:8088"
+  max_connections: 10
+
+replication:
+  replica_type: "master"
+  master_address: "127.0.0.1:8090" # we use different ports to differentiate incoming data
 
 logger:
   level: debug
