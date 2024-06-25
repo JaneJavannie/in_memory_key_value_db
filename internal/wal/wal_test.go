@@ -10,6 +10,7 @@ import (
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStart(t *testing.T) {
@@ -62,4 +63,50 @@ func TestWriteRecord(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error writing record: %v", err)
 	}
+}
+
+func TestWriteRecord_OpenFileError(t *testing.T) {
+	dataDir := "/path/to/data"
+	filename := "test.txt"
+	walRecords := bytes.NewBufferString("test data")
+
+	err := WriteRecord(dataDir, filename, *walRecords)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "open file")
+}
+
+func TestWriteRecord_WriteFileError(t *testing.T) {
+	dataDir := "/path/to/data"
+	filename := "test.txt"
+	walRecords := bytes.NewBufferString("test data")
+
+	err := WriteRecord(dataDir, filename, *walRecords)
+
+	assert.Error(t, err)
+}
+
+func TestBuildWalRecordsFromMap(t *testing.T) {
+	logs := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+	}
+
+	walRecords := buildWalRecordsFromMap(logs)
+
+	assert.Contains(t, walRecords.String(), "SET key1 value1 \n", "SET key2 value2 \n")
+}
+
+func TestRemoveFileWithRetries(t *testing.T) {
+	dataDir := "./"
+	fileName := "testfile"
+
+	file, err := os.CreateTemp(dataDir, fileName)
+	if err != nil {
+		t.Fatalf("Error creating temporary file: %v", err)
+	}
+
+	err = removeFileWithRetries(dataDir, file.Name())
+
+	assert.NoError(t, err)
 }

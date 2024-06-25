@@ -10,6 +10,7 @@ import (
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts/defaults"
 	"github.com/cespare/xxhash/v2"
 )
 
@@ -32,9 +33,13 @@ func NewInMemoryStorage(cfg *configs.Config) (*InMemoryStorage, error) {
 		}
 	}
 
+	if cfg == nil {
+		return c, nil
+	}
+
 	replication := cfg.Replication
 
-	if cfg.Wal == nil || replication == nil {
+	if cfg.Wal == nil && replication == nil {
 		return c, nil
 	}
 
@@ -44,7 +49,7 @@ func NewInMemoryStorage(cfg *configs.Config) (*InMemoryStorage, error) {
 		dataDir = cfg.Wal.DataDir
 	}
 
-	if replication != nil && replication.Type == consts.ReplicationTypeSlave {
+	if replication != nil && replication.Type == defaults.ReplicationTypeSlave {
 		dataDir = replication.ReplicatedDataDir
 	}
 
@@ -99,6 +104,7 @@ func (c *InMemoryStorage) loadWal(dir string) error {
 		}
 
 		scanner := bufio.NewScanner(file)
+
 		for scanner.Scan() {
 			entries := strings.Split(scanner.Text(), " ")
 
@@ -117,6 +123,9 @@ func (c *InMemoryStorage) loadWal(dir string) error {
 			default:
 				return fmt.Errorf("unknown command: %s", command)
 			}
+		}
+		if err := scanner.Err(); err != nil {
+			return fmt.Errorf("scan file: %s: %w", file.Name(), err)
 		}
 
 	}

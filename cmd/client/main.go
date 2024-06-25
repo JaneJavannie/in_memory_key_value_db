@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -20,11 +21,6 @@ const (
 )
 
 // --server_address="localhost:8088"
-
-type userInput struct {
-	text string
-	err  error
-}
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -98,6 +94,6 @@ func readRequestStringWithContext(ctx context.Context) (string, error) {
 	case <-ctx.Done():
 		return "", ctx.Err()
 	case r := <-done:
-		return r.text, r.err
+		return strings.Replace(r.text, "\n", "\r", 1), r.err
 	}
 }

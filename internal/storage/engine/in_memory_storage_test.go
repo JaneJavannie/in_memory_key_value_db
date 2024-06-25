@@ -9,7 +9,7 @@ import (
 
 func TestLoadWal(t *testing.T) {
 	dir := "../../../wal_logs/wal"
-	c, err := NewInMemoryStorage(&configs.Wal{DataDir: dir})
+	c, err := NewInMemoryStorage(&configs.Config{Wal: &configs.Wal{DataDir: dir}})
 	require.NoError(t, err)
 
 	res, _ := c.Get("test_val")

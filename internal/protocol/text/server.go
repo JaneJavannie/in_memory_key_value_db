@@ -9,8 +9,7 @@ import (
 	"sync"
 
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
-
-	"github.com/google/uuid"
+	"github.com/JaneJavannie/in_memory_key_value_db/utils"
 )
 
 type TcpServer struct {
@@ -108,7 +107,7 @@ func (s *TcpServer) handleClient(ctx context.Context, conn net.Conn) error {
 	slog.Info("accepted new connection")
 
 	for {
-		requestCtx := context.WithValue(ctx, consts.RequestID, uuid.New().String())
+		requestCtx := context.WithValue(ctx, consts.RequestID, utils.GetRequestUUID())
 		l := s.log.With(consts.RequestID, requestCtx.Value(consts.RequestID))
 
 		request, err := readWithContext(requestCtx, conn)

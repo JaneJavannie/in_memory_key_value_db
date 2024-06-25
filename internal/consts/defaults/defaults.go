@@ -1,4 +1,4 @@
-package consts
+package defaults
 
 import "time"
 
@@ -18,8 +18,12 @@ const (
 	LogLevel       = "info"
 	MaxMessageSize = 1024
 
+	WalCompactionTimeout    = 30 * time.Second
 	WalMaxSegmentSize       = "10MB"
 	WalFlushingBatchSize    = 100
 	WalFlushingBatchTimeout = 10 * time.Millisecond
 	WalDataDir              = "/data/wal"
+
+	RetriesCount = 3
+	RetriesDelay = 500 * time.Millisecond
 )
