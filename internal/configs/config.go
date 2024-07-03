@@ -97,7 +97,9 @@ func (c *Config) SetDefaults() error {
 	if c.Wal != nil {
 		// turn off replication when compaction is on
 		if c.Wal.Compaction {
-			c.Replication = nil
+			if c.Replication != nil {
+				return fmt.Errorf("compaction and replication can't be used at the same time")
+			}
 
 			if c.Wal.CompactionInterval == 0 {
 				c.Wal.CompactionInterval = defaults.WalCompactionTimeout

@@ -298,16 +298,12 @@ func handleDirs(dataDir string, dirEntry fs.DirEntry, compactedMap map[string]st
 func removeFileWithRetries(dataDir string, fileName string) error {
 	path := filepath.Join(dataDir, fileName)
 
-	err := utils.WithRetries(context.Background(), defaults.RetriesCount, defaults.RetriesDelay, func() error {
-		err := os.Remove(path)
-		if err != nil {
-			return fmt.Errorf("remove file: %w", err)
-		}
+	err := os.Remove(path)
+	if err != nil {
+		return fmt.Errorf("remove file: %w", err)
+	}
 
-		return nil
-	})
-
-	return err
+	return nil
 }
 
 func buildWalRecordsFromMap(logs map[string]string) bytes.Buffer {
