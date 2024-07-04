@@ -5,8 +5,10 @@ engine:
   type: "in_memory"
 
 wal:
+  compaction: true
+  compaction_interval: 30s #1m
   flushing_batch_size: 2
-  flushing_batch_timeout: "1000s"
+  flushing_batch_timeout: "10s"
   max_segment_size: "2KB"
   data_directory: "./wal_logs/wal"
 

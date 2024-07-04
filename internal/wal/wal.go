@@ -1,6 +1,7 @@
 package wal
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -16,10 +17,17 @@ import (
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts/defaults"
+	"github.com/JaneJavannie/in_memory_key_value_db/utils"
 )
+
+const fileTimeFormat = "20060102_150405.00000"
 
 type Wal struct {
 	logger *slog.Logger
+
+	compaction         bool
+	compactionInterval time.Duration
 
 	batchSize             int
 	batchTimeout          time.Duration
@@ -43,12 +51,15 @@ type Log struct {
 }
 
 func NewWal(logger *slog.Logger, cfg *configs.Wal, replicationType string) (*Wal, error) {
-	if cfg == nil || replicationType == consts.ReplicationTypeSlave {
+	if cfg == nil || replicationType == defaults.ReplicationTypeSlave {
 		return &Wal{}, nil
 	}
 
 	wal := &Wal{
 		logger: logger,
+
+		compaction:         cfg.Compaction,
+		compactionInterval: cfg.CompactionInterval,
 
 		batchSize:             cfg.FlushingBatchSize,
 		batchTimeout:          cfg.FlushingBatchTimeout,
@@ -103,6 +114,25 @@ func (w *Wal) Start(wal *configs.Wal) {
 			}
 		}
 	}()
+
+	if wal.Compaction {
+		w.wg.Add(1)
+
+		go func() {
+			defer w.wg.Done()
+
+			timer := time.NewTicker(w.compactionInterval)
+			defer timer.Stop()
+
+			for range timer.C {
+				err := w.compactWals()
+				if err != nil {
+					w.logger.Error("compaction wals: ", err)
+				}
+			}
+		}()
+	}
+
 }
 
 func (w *Wal) handleTimerEvent() bool {
@@ -175,7 +205,7 @@ func (w *Wal) flushRecords() error {
 		return dirEntries[i].Name() < dirEntries[j].Name()
 	})
 
-	walRecords := BuildWalRecords(w.batch)
+	walRecords := buildWalRecords(w.batch)
 
 	if err = writeWalRecords(w.dataDir, dirEntries, walRecords, w.maxLogFileSegmentSize); err != nil {
 		return fmt.Errorf("write wal records: %w", err)
@@ -184,7 +214,110 @@ func (w *Wal) flushRecords() error {
 	return nil
 }
 
-func BuildWalRecords(batch []Log) bytes.Buffer {
+func (w *Wal) compactWals() error {
+	dirEntries, err := os.ReadDir(w.dataDir)
+	if err != nil {
+		return fmt.Errorf("read dir: %w", err)
+	}
+
+	compactedMap := make(map[string]string)
+
+	for _, dirEntry := range dirEntries {
+		if dirEntry.IsDir() {
+			continue
+		}
+
+		err = handleDirs(w.dataDir, dirEntry, compactedMap)
+		if err != nil {
+			return fmt.Errorf("handle dirs: %w", err)
+		}
+	}
+
+	walRecords := buildWalRecordsFromMap(compactedMap)
+
+	if walRecords.Len() == 0 {
+		return nil
+	}
+
+	fileName := fmt.Sprintf("%s", time.Now().Format(fileTimeFormat))
+
+	err = WriteRecord(w.dataDir, fileName, walRecords)
+	if err != nil {
+		return fmt.Errorf("write record: %s: %w", fileName, err)
+	}
+
+	for _, entry := range dirEntries {
+		err = removeFileWithRetries(w.dataDir, entry.Name())
+		if err != nil {
+			return fmt.Errorf("remove file: %s: %w", entry.Name(), err)
+		}
+	}
+
+	w.logger.Debug("WAL compaction completed")
+
+	return nil
+}
+
+func handleDirs(dataDir string, dirEntry fs.DirEntry, compactedMap map[string]string) error {
+	filename := dirEntry.Name()
+	path := filepath.Join(dataDir, filename)
+
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("error opening file: %v\n", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		entries := strings.Split(scanner.Text(), " ")
+
+		args := entries[2:]
+		command := entries[1]
+
+		switch command {
+		case consts.CommandSet:
+			compactedMap[args[0]] = args[1]
+
+		case consts.CommandDel:
+			delete(compactedMap, args[0])
+
+		default:
+			return fmt.Errorf("unknown command: %s", command)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("scan file: %s: %w", path, err)
+	}
+
+	return nil
+}
+
+func removeFileWithRetries(dataDir string, fileName string) error {
+	path := filepath.Join(dataDir, fileName)
+
+	err := os.Remove(path)
+	if err != nil {
+		return fmt.Errorf("remove file: %w", err)
+	}
+
+	return nil
+}
+
+func buildWalRecordsFromMap(logs map[string]string) bytes.Buffer {
+	walRecords := bytes.Buffer{}
+
+	for k, v := range logs {
+		record := fmt.Sprintf("%s %s %s \n", utils.GetRequestUUID(), consts.CommandSet, strings.Join([]string{k, v}, " "))
+		walRecords.WriteString(record)
+	}
+
+	return walRecords
+}
+
+func buildWalRecords(batch []Log) bytes.Buffer {
 	walRecords := bytes.Buffer{}
 
 	for _, log := range batch {
@@ -215,7 +348,7 @@ func writeWalRecords(dataDir string, dirEntries []fs.DirEntry, walRecords bytes.
 	}
 
 	// write to a new file
-	fileName := fmt.Sprintf("%s", time.Now().Format("20060102_150405"))
+	fileName := fmt.Sprintf("%s", time.Now().Format(fileTimeFormat))
 	err := WriteRecord(dataDir, fileName, walRecords)
 	if err != nil {
 		return fmt.Errorf("write record: %s: %w", fileName, err)

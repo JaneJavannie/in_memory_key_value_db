@@ -8,6 +8,7 @@ import (
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/compute"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/configs"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts/defaults"
 	"github.com/JaneJavannie/in_memory_key_value_db/internal/wal"
 )
 
@@ -21,7 +22,7 @@ type Engine struct {
 }
 
 func NewInMemoryEngine(storage *InMemoryStorage, wal *wal.Wal, logger *slog.Logger, cfgWal *configs.Wal, replicationType string) (*Engine, error) {
-	isSlave := replicationType == consts.ReplicationTypeSlave
+	isSlave := replicationType == defaults.ReplicationTypeSlave
 
 	e := Engine{
 		logger:     logger,

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts"
+	"github.com/JaneJavannie/in_memory_key_value_db/internal/consts/defaults"
 )
 
 func TestNewConfig(t *testing.T) {
@@ -28,17 +28,17 @@ func TestNewConfig(t *testing.T) {
 			input: fmt.Sprintf("%s/testdata/config_default.yaml", cwd),
 			want: &Config{
 				App: App{
-					Timeout: consts.AppTimeout * time.Second,
+					Timeout: defaults.AppTimeout * time.Second,
 				},
 				Engine: Engine{
-					Type: consts.EngineType,
+					Type: defaults.EngineType,
 				},
 				Network: Network{
-					Address:        consts.MasterServerAddress,
-					MaxConnections: consts.MaxConnections,
+					Address:        defaults.MasterServerAddress,
+					MaxConnections: defaults.MaxConnections,
 				},
 				Logger: Logger{
-					Level:    consts.LogLevel,
+					Level:    defaults.LogLevel,
 					IsPretty: false,
 				},
 			},
